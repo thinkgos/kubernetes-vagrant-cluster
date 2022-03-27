@@ -44,7 +44,7 @@ echo "~~> 启动kubelet 现在每隔几秒就会重启,因为它陷入了一个�
 systemctl enable --now kubelet
 systemctl start kubelet
 
-if [[ ${hostname} -eq ${node1} ]]
+if [[ $(hostname) == ${node1} ]]
 then
     echo "~~> 主节点安装k8s"
     kubeadm init --apiserver-advertise-address=${node1_ip} \
