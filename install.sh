@@ -1,72 +1,58 @@
-#!/bin/bash
-echo "~~> 使用镜像源"
-curl -L "http://mirrors.aliyun.com/repo/Centos-7.repo" -o /etc/yum.repos.d/CentOS-Base.repo
-echo "~~> 安装相关工具"
-yum install -y yum-utils curl vim 
+#传递的变量
+the_user=$1
+the_group=$2
 
-echo "~~> 使能ntp,并时间同步"
-yum install -y ntp ntpdate
-cp /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
-timedatectl set-timezone Asia/Shanghai 
-/usr/sbin/ntpdate ntp1.aliyun.com
-systemctl start ntpd
-systemctl enable ntpd
+# k8s变量
+k8s_version=v1.23.5
+pod_network_cidr="10.244.0.0/16"
 
-echo '~~> 设置nameserver'
-echo "nameserver 8.8.8.8">/etc/resolv.conf
-cat /etc/resolv.conf
+# 变量
+node1="k8s-node1"
+node2="k8s-node2"
+node3="k8s-node3"
+node1_ip=192.168.56.101 
+node2_ip=192.168.56.102
+node3_ip=192.168.56.103
 
-echo "~~> 安装docker"
-yum-config-manager \
-  --add-repo \
-  https://download.docker.com/linux/centos/docker-ce.repo
-yum install -y docker-ce docker-ce-cli containerd.io
-mkdir -p /etc/docker
-cat > /etc/docker/daemon.json <<-EOF 
-{
-  "registry-mirrors": [
-      "https://8s2vzrff.mirror.aliyuncs.com",
-      "https://docker.mirrors.ustc.edu.cn",
-      "https://registry.docker-cn.com"
-  ]
-}
+echo "~~> 修改三台主机hosts"
+cat >> /etc/hosts <<EOF
+${node1_ip}   ${node1}
+${node2_ip}   ${node2}
+${node3_ip}   ${node3}
 EOF
 
-echo "~~>> 将用户加入docker组"
-groupadd -f docker
-gpasswd -a vagrant docker # usermod -aG docker vagrant # ${USER}
-newgrp docker  
+echo "~~> 添加kube组件仓库源"
+cat > /etc/yum.repos.d/kubernetes.repo<<EOF
+[kubernetes]
+name=Kubernetes
+baseurl=https://mirrors.aliyun.com/kubernetes/yum/repos/kubernetes-el7-x86_64/
+enabled=1
+gpgcheck=1
+repo_gpgcheck=0
+gpgkey=https://mirrors.aliyun.com/kubernetes/yum/doc/yum-key.gpg https://mirrors.aliyun.com/kubernetes/yum/doc/rpm-package-key.gpg
+EOF
 
-echo "~~>> 启动docker服务"
-systemctl enable docker
-systemctl start docker
-docker version
+echo "~~>> 安装kube组件"
+yum makecache -y fast
+yum install -y kubectl kubelet kubeadm --disableexcludes=kubernetes
 
-echo "~~> 安装kubectl"
-curl -L "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" -o /usr/local/bin/kubectl
-chmod +x /usr/local/bin/kubectl
+echo "~~>> kubectl"
 kubectl completion bash | tee /etc/bash_completion.d/kubectl > /dev/null
-kubectl version --client
+ kubectl version --client
 
-echo "~~> 安装k8s前置条件"
-yum install -y conntrack-tools socat ebtables ipset
-echo "~~>> 关闭 selinux"
-getenforce 
-setenforce 0
-sed -i 's/^SELINUX=enforcing$/SELINUX=disabled/' /etc/selinux/config
-echo "~~>> 关闭防火墙"
-systemctl status firewalld
-systemctl disable firewalld
-systemctl stop firewalld
-echo "~~>> 禁止swap"
-swapoff -a
-sed -ri 's/.*swap.*/#&/' /etc/fstab
-echo "~~>> 网络"
-echo 1 > /proc/sys/net/bridge/bridge-nf-call-iptables
-echo 1 > /proc/sys/net/bridge/bridge-nf-call-ip6tables
-echo 1 > /proc/sys/net/ipv4/ip_forward
-echo '~~> 使能iptable kernel参数'
-cat >> /etc/sysctl.conf <<EOF
-net.ipv4.ip_forward=1
-EOF
-sysctl -p
+echo "~~> 启动kubelet 现在每隔几秒就会重启,因为它陷入了一个等待kubeadm指令的死循环"
+systemctl enable --now kubelet
+systemctl start kubelet
+
+if [[ ${hostname} -eq ${node1} ]]
+then
+    echo "~~> 主节点安装k8s"
+    kubeadm init --apiserver-advertise-address=${node1_ip} \
+     --image-repository registry.aliyuncs.com/google_containers \
+     --kubernetes-version ${k8s_version} \
+     --pod-network-cidr=${pod_network_cidr} \
+     >> /vagrant/kubeadm.out
+    mkdir -p /home/${the_user}/.kube
+    cp -i /etc/kubernetes/admin.conf /home/${the_user}/.kube/config
+    chown ${the_user}:${the_group} /home/${the_user}/.kube/config
+fi
