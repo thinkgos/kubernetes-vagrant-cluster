@@ -51,7 +51,7 @@ then
      --image-repository registry.aliyuncs.com/google_containers \
      --kubernetes-version ${k8s_version} \
      --pod-network-cidr=${pod_network_cidr} \
-     >> /vagrant/kubeadm.out
+     > /vagrant/kubeadm.out
     mkdir -p /home/${the_user}/.kube
     cp -i /etc/kubernetes/admin.conf /home/${the_user}/.kube/config
     chown ${the_user}:${the_group} /home/${the_user}/.kube/config
