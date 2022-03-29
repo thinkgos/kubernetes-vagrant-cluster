@@ -35,7 +35,43 @@ kubeadm join --token <token> <control-plane-host>:<control-plane-port> --discove
 kubectl taint nodes --all node-role.kubernetes.io/master
 ```
 
-# References
+## 配置 ipvs
+
+```shell
+kubectl edit configmap -n kube-system kube-proxy
+```
+
+修改其中的
+
+```yaml
+apiVersion: kubeproxy.config.k8s.io/v1alpha1
+kind: KubeProxyConfiguration
+mode: "ipvs"
+ipvs:
+  strictARP: true
+```
+
+重启pod
+
+```shell
+kubectl get pod -n kube-system |grep kube-proxy |awk '{system("kubectl delete pod "$1" -n kube-system")}'
+```
+
+## 安装 metallb
+
+```shell
+kubectl apply -f addon/metallb/namespace.yml
+helm install metallb  metallb/metallb -f addon/metallb/values.yml  -n metallb-system
+```
+
+## 安装 ingress-nginx
+
+```shell
+kubectl apply -f addon/ingress-nginx/namespace.yml
+helm install  ingress-nginx ingress-nginx/ingress-nginx -f addon/ingress-nginx/values.yaml -n ingress-nginx
+```
+
+## References
 
 - [vagrant](https://www.vagrantup.com/docs/)
 - [kubeadm](https://kubernetes.io/zh/docs/setup/production-environment/tools/)

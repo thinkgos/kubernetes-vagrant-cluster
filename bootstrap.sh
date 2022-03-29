@@ -51,7 +51,7 @@ systemctl start docker
 docker version
 
 echo "~~> 安装k8s前置条件"
-yum install -y conntrack-tools socat ebtables ethtool ipset
+yum install -y conntrack-tools socat ebtables ethtool ipset ipvsadm
 echo "~~>> 关闭 selinux"
 getenforce 
 setenforce 0
