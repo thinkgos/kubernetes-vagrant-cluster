@@ -64,8 +64,11 @@ Vagrant.configure("2") do |config|
         node.vm.box = "centos/7"
         node.vm.box_version = "2004.01"
         node.vm.hostname = "k8s-node#{i}"
-        ip = "192.168.56.#{i+100}"
-        node.vm.network "private_network", ip: ip
+     
+        # ip = "192.168.56.#{i+200}"
+        # node.vm.network "private_network", ip: ip
+        ip = "172.16.5.#{i+200}"
+        node.vm.network "public_network", bridge: "enp1s0", adapter: 2, ip: ip
         node.vm.provider "virtualbox" do |vb|
           vb.memory = "2048"
           vb.cpus = 2

@@ -10,9 +10,12 @@ pod_network_cidr="10.244.0.0/16"
 node1="k8s-node1"
 node2="k8s-node2"
 node3="k8s-node3"
-node1_ip=192.168.56.101 
-node2_ip=192.168.56.102
-node3_ip=192.168.56.103
+# node1_ip=192.168.56.101 
+# node2_ip=192.168.56.102
+# node3_ip=192.168.56.103
+node1_ip=172.16.5.201 
+node2_ip=172.16.5.202
+node3_ip=172.16.5.203
 
 echo "~~> 修改三台主机hosts"
 cat >> /etc/hosts <<EOF
