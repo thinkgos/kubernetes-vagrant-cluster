@@ -57,7 +57,7 @@ Vagrant.configure("2") do |config|
     #  sync time on host wake-up within VirtualBox
     vb.customize [ "guestproperty", "set", :id, "/VirtualBox/GuestAdd/VBoxService/--timesync-set-threshold", 1000 ]
   end  
-    config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
+  config.vm.synced_folder ".", "/vagrant", type: "virtualbox"
     $num_instances = 3
     (1..$num_instances).each do |i|
       config.vm.define "node#{i}" do |node|
