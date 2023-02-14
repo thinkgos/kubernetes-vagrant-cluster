@@ -26,7 +26,7 @@ echo "~~> 安装docker"
 yum-config-manager \
   --add-repo \
   https://download.docker.com/linux/centos/docker-ce.repo
-yum install -y docker-ce docker-ce-cli containerd.io
+yum install -y docker-ce docker-ce-cli docker-compose-plugin containerd.io
 mkdir -p /etc/docker
 # docker的cgroup驱动程序默认设置为system,默认情况下Kubernetes cgroup为systemd
 cat > /etc/docker/daemon.json <<-EOF 
